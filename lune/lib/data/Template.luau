@@ -370,14 +370,14 @@ local function LoadScript(scriptRef)
     -- If it's a BaseScript, we'll just run it directly!
     if ScriptClassName == "LocalScript" or ScriptClassName == "Script" then
         local RunSuccess, ErrorMessage = pcall(Closure)
-        if not RunSuccess then
+        if RunSuccess == false then
             error(FormatError(ErrorMessage), 0)
         end
     else
         local PCallReturn = {pcall(Closure)}
 
         local RunSuccess = table_remove(PCallReturn, 1)
-        if not RunSuccess then
+        if RunSuccess == false then
             local ErrorMessage = table_remove(PCallReturn, 1)
             error(FormatError(ErrorMessage), 0)
         end
@@ -405,9 +405,11 @@ function ImportGlobals(refId)
 
     -- `wax.shared` index
     local WaxShared = table_freeze(setmetatable({}, {
-        __index = SharedEnvironment,
+        __index = function(_, index) 
+            return rawget(SharedEnvironment, index)
+        end,
         __newindex = function(_, index, value)
-            SharedEnvironment[index] = value
+            rawset(SharedEnvironment, index, value)
         end,
         __len = function()
             return #SharedEnvironment
@@ -423,6 +425,8 @@ function ImportGlobals(refId)
         envname = EnvName,
 
         shared = WaxShared,
+        GetShared = function() return SharedEnvironment end,
+        UpdateShared = function(newShared) SharedEnvironment = newShared end,
 
         -- "Real" globals instead of the env set ones
         script = script,

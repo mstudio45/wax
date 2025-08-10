@@ -352,8 +352,8 @@ elseif Subcommand == "bundle" then
     end
 
     local DarkluaBinaryExists = CommandUtils.CommandExists("darklua")
-    if Minify and not DarkluaBinaryExists then
-        Log.Warn("The `minify` option is set as true, but the `darklua` command wasn't found in your PATH environment variable.. (Wax won't be able to completely minify the output)")
+    if --[[Minify and--]] not DarkluaBinaryExists then
+        Log.Warn("`darklua` command wasn't found in your PATH environment variable.. (Wax won't be able to completely the output)")
         if not CIMode then
             local ShouldContinue = stdio.prompt("confirm", "Continue anyway?")
             if not ShouldContinue then
@@ -363,7 +363,7 @@ elseif Subcommand == "bundle" then
     end
 
     -- Create tmp dir if applicable
-    if InputType == ".project.json" or (Minify and DarkluaBinaryExists) then
+    if InputType == ".project.json" or (--[[Minify and--]] DarkluaBinaryExists) then
         WriteDir(TempDir)
     end
 
@@ -404,7 +404,7 @@ elseif Subcommand == "bundle" then
         BadExit(`Error during BundleModel() process: {CodegenOutputOrError}`)
     end
 
-    if Minify and DarkluaBinaryExists then
+    if --[[Minify and--]] DarkluaBinaryExists then
         local TempOutputFilePath = TempDir .. OutputFileName
         WriteFile(TempOutputFilePath, CodegenOutputOrError)
 
