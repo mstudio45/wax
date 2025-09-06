@@ -369,17 +369,22 @@ local function LoadScript(scriptRef)
 
     -- If it's a BaseScript, we'll just run it directly!
     if ScriptClassName == "LocalScript" or ScriptClassName == "Script" then
-        local RunSuccess, ErrorMessage = pcall(Closure)
+        local RunSuccess, ErrorMessage = xpcall(Closure, function(err)
+            return debug.traceback(FormatError(err), 2)
+        end)
+
         if RunSuccess == false then
-            error(FormatError(ErrorMessage), 0)
+            error(ErrorMessage, 0)
         end
     else
-        local PCallReturn = {pcall(Closure)}
+        local PCallReturn = {xpcall(Closure, function(err)
+            return debug.traceback(FormatError(err), 2)
+        end)}
 
         local RunSuccess = table_remove(PCallReturn, 1)
         if RunSuccess == false then
             local ErrorMessage = table_remove(PCallReturn, 1)
-            error(FormatError(ErrorMessage), 0)
+            error(ErrorMessage, 0)
         end
 
         StoredModuleValues[scriptRef] = PCallReturn
