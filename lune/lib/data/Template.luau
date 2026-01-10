@@ -2,6 +2,25 @@
 -- With that being said, this explains the weird cflow in some parts
 
 return [[
+-- ++++++++ WAX SHARED ENVIRONMENT BELOW ++++++++ --
+
+if not LPH_NO_VIRTUALIZE then
+    LPH_NO_VIRTUALIZE = function(...) return(...) end;
+end
+
+local SharedEnvironment = {}
+local genv = table.freeze(setmetatable({}, {
+    __index     = LPH_NO_VIRTUALIZE(function(_, index) return rawget(SharedEnvironment, index) end),
+    __newindex  = LPH_NO_VIRTUALIZE(function(_, index, value) rawset(SharedEnvironment, index, value) end),
+    __len       = LPH_NO_VIRTUALIZE(function() return #SharedEnvironment end),
+    __iter      = LPH_NO_VIRTUALIZE(function() return next, SharedEnvironment end)
+}))
+
+local SetGlobalState = LPH_NO_VIRTUALIZE(function(name, value)
+    genv[name] = value
+    getgenv()[name] = value
+end)
+
 -- ++++++++ WAX BUNDLED DATA BELOW ++++++++ --
 
 -- Will be used later for getting flattened globals
@@ -28,7 +47,7 @@ local string, task, setmetatable, error, next, table, unpack, coroutine, script,
 
 local table_insert = table.insert
 local table_remove = table.remove
-local table_freeze = table.freeze or function(t) return t end -- lol
+local table_freeze = table.freeze or function(t) return t end
 
 local coroutine_wrap = coroutine.wrap
 
@@ -67,9 +86,6 @@ local ScriptClosures = {}
 local ScriptClosureRefIds = {} -- [ScriptClosure] = RefId
 local StoredModuleValues = {}
 local ScriptsToRun = {}
-
--- wax.shared __index/__newindex
-local SharedEnvironment = {}
 
 -- We're creating 'fake' instance refs soley for traversal of the DOM for require() compatibility
 -- It's meant to be as lazy as possible
@@ -408,28 +424,12 @@ function ImportGlobals(refId)
         return unpack(PCallReturn)
     end
 
-    -- `wax.shared` index
-    local WaxShared = table_freeze(setmetatable({}, {
-        __index = function(_, index) 
-            return rawget(SharedEnvironment, index)
-        end,
-        __newindex = function(_, index, value)
-            rawset(SharedEnvironment, index, value)
-        end,
-        __len = function()
-            return #SharedEnvironment
-        end,
-        __iter = function()
-            return next, SharedEnvironment
-        end,
-    }))
-
     local Global_wax = table_freeze({
         -- From AOT variable imports
         version = WaxVersion,
         envname = EnvName,
 
-        shared = WaxShared,
+        shared = genv,
         GetShared = function() return SharedEnvironment end,
         UpdateShared = function(newShared) SharedEnvironment = newShared end,
 
