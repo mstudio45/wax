@@ -13,8 +13,8 @@ local net = require("@lune/net")
 local luau = require("@lune/luau")
 
 local FileLink = if string.lower(WaxVersion) == "latest"
-	then "https://github.com/latte-soft/wax/releases/latest/download/wax.luau"
-	else `https://github.com/latte-soft/wax/releases/download/{WaxVersion}/wax.luau`
+	then "https://github.com/mstudio45/wax/releases/latest/download/wax.luau"
+	else `https://github.com/mstudio45/wax/releases/download/{WaxVersion}/wax.luau`
 
 luau.load(net.request(FileLink).body, {
 	debugName = "Wax",

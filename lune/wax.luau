@@ -376,7 +376,7 @@ elseif Subcommand == "bundle" then
 	end
 
     -- Create tmp dir if applicable
-    if InputType == ".project.json" or (Minify and DarkluaBinaryExists) then
+    if InputType == ".project.json" or (--[[ Minify and --]] DarkluaBinaryExists) then
         WriteDir(TempDir)
     end
 
