@@ -75,11 +75,11 @@ If you already have a "`lune`", "`.lune`", or similar directory in your project 
 ```lua
 --[[
     Wax - A Fast Runtime-Based Lua 5.1x+/Luau Project Bundler, Using Roblox Models and Module-Require Semantics
-    MIT License | Copyright (c) 2023-2024 Latte Softworks <https://latte.to>
+    MIT License | Copyright (c) 2023-2025 Latte Softworks <https://latte.to>
 ]]
 
 -- You set the following string to "latest" (case insensitive), or any version tag
--- on Wax's releases page (e.g. "0.4.1")
+-- on Wax's releases page (e.g. "0.4.2")
 local WaxVersion = "latest"
 
 -------------------------------------------------------------------------------
@@ -104,7 +104,7 @@ luau.load(net.request(FileLink).body, {
 From your terminal in the root directory of your project, run `lune run wax`, or just `lune run <path/to/wax.luau>`
 
 ```
-Wax 0.4.1
+Wax 0.4.2
 A Fast Runtime-Based Lua 5.1x+/Luau Project Bundler, Using Roblox Models and Module-Require Semantics
 
 USAGE:
@@ -138,12 +138,12 @@ SUBCOMMANDS:
             Additionally, with Darklua, if a ".darklua.json/json5" file isn't found in the
             CWD (your dir "position" in your terminal), it'll use the default configuration
             we provide (see `lune/lib/data/DefaultDarkluaConfig.luau`)
-    
+
       * env-name[="WaxRuntime"]
             The name of the "environment" of the bundled script. This is the "name" of
             the root object (like the `game` DataModel in Roblox) and displays in virtual
             runtime errors (e.g. "[WaxRuntime].Script:1: Some error message")
-    
+
       * darklua-config-path[=(".darklua.json", ".darklua.json5")]
             When `minify` is set as true, this path can be used to directly pass your own
             Darklua config file's path, instead of only checking for the default paths
@@ -279,7 +279,7 @@ build
 ```
 MIT License
 
-Copyright (c) 2023-2024 Latte Softworks <https://latte.to>
+Copyright (c) 2023-2025 Latte Softworks <https://latte.to>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
