@@ -4,7 +4,7 @@
 return [[
 -- ++++++++ WAX SHARED ENVIRONMENT BELOW ++++++++ --
 
-if not LPH_NO_VIRTUALIZE then
+if not LPH_OBFUSCATED then
     LPH_NO_VIRTUALIZE = function(...) return(...) end;
 end
 
