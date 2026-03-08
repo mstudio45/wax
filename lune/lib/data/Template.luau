@@ -1,6 +1,31 @@
 -- This codegen template *must* be 100% compatible with Lua 5.1x+, NOT just Luau
 -- With that being said, this explains the weird cflow in some parts
 
+local DebugFunctionMain = [[local %s = LPH_NO_VIRTUALIZE(function(...)
+    local Logs = SharedEnvironment.Logs
+    local LogsEnabled = genv._mspaint_debug_enabled == true
+
+    if Logs then
+        Logs.DebugEnabled = LogsEnabled
+        Logs:%s(...)
+
+        return
+    end
+
+    if not LogsEnabled then return end
+    %s("[mspaint debug]", ...);
+end)
+
+]];
+
+local CreateDebugFunction = function(Name, LogFunc, Func)
+    return string.format(DebugFunctionMain, Name, LogFunc, Func)
+end
+
+local DebugPrint = CreateDebugFunction("debug_print", "Debug", "print")
+local DebugWarn = CreateDebugFunction("debug_warn", "DebugWarn", "warn")
+local DebugError = CreateDebugFunction("debug_error", "DebugError", "error")
+
 return [[
 -- ++++++++ WAX SHARED ENVIRONMENT BELOW ++++++++ --
 
@@ -19,6 +44,22 @@ local genv = table.freeze(setmetatable({}, {
 local SetGlobalState = LPH_NO_VIRTUALIZE(function(name, value)
     genv[name] = value
     getgenv()[name] = value
+end)
+
+]] .. DebugPrint .. [[]] .. DebugWarn .. [[]] .. DebugError .. [[
+
+local IsUtilLoaded = LPH_NO_VIRTUALIZE(function(UtilName, UtilIndex)
+    local LoadedUtil = SharedEnvironment[UtilIndex]
+    if LoadedUtil then
+        if not LPH_OBFUSCATED then
+            warn(string.format("Util %q is already loaded:\n%s", UtilName, debug.traceback()))
+        end
+
+        return LoadedUtil
+    end
+
+    debug_print(string.format("Loading %s...", UtilName));
+    return nil
 end)
 
 -- ++++++++ WAX BUNDLED DATA BELOW ++++++++ --
