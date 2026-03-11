@@ -2,7 +2,6 @@
     "rules": [
         "convert_index_to_field",
         "compute_expression",
-        "group_local_assignment",
         "filter_after_early_return",
         "remove_empty_do",
         "remove_function_call_parens",

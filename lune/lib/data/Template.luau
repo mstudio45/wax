@@ -41,6 +41,8 @@ local genv = table.freeze(setmetatable({}, {
     __iter      = LPH_NO_VIRTUALIZE(function() return next, SharedEnvironment end)
 }))
 
+-- ++++++++ MSPAINT FUNCTIONS BELOW ++++++++ --
+
 local SetGlobalState = LPH_NO_VIRTUALIZE(function(name, value)
     genv[name] = value
     getgenv()[name] = value
@@ -88,7 +90,7 @@ local string, task, setmetatable, error, next, table, unpack, coroutine, script,
 
 local table_insert = table.insert
 local table_remove = table.remove
-local table_freeze = table.freeze or function(t) return t end
+local table_freeze = table.freeze or LPH_NO_VIRTUALIZE(function(t) return t end)
 
 local coroutine_wrap = coroutine.wrap
 
@@ -108,9 +110,9 @@ end
 local task_defer = task and task.defer
 
 -- If we're not running on the Roblox engine, we won't have a `task` global
-local Defer = task_defer or function(f, ...)
+local Defer = task_defer or LPH_NO_VIRTUALIZE(function(f, ...)
     coroutine_wrap(f)(...)
-end
+end)
 
 -- ClassName "IDs"
 local ClassNameIdBindings = {
@@ -134,7 +136,7 @@ local RefChildren = {} -- [Ref] = {ChildrenRef, ...}
 
 -- Implemented instance methods
 local InstanceMethods = {
-    GetFullName = { {}, function(self)
+    GetFullName = { {}, LPH_NO_VIRTUALIZE(function(self)
         local Path = self.Name
         local ObjectPointer = self.Parent
 
@@ -146,9 +148,9 @@ local InstanceMethods = {
         end
 
         return Path
-    end},
+    end)},
 
-    GetChildren = { {}, function(self)
+    GetChildren = { {}, LPH_NO_VIRTUALIZE(function(self)
         local ReturnArray = {}
 
         for Child in next, RefChildren[self] do
@@ -156,9 +158,9 @@ local InstanceMethods = {
         end
 
         return ReturnArray
-    end},
+    end)},
 
-    GetDescendants = { {}, function(self)
+    GetDescendants = { {}, LPH_NO_VIRTUALIZE(function(self)
         local ReturnArray = {}
 
         for Child in next, RefChildren[self] do
@@ -170,9 +172,9 @@ local InstanceMethods = {
         end
 
         return ReturnArray
-    end},
+    end)},
 
-    FindFirstChild = { {"string", "boolean?"}, function(self, name, recursive)
+    FindFirstChild = { {"string", "boolean?"}, LPH_NO_VIRTUALIZE(function(self, name, recursive)
         local Children = RefChildren[self]
 
         for Child in next, Children do
@@ -188,9 +190,9 @@ local InstanceMethods = {
                 return Child:FindFirstChild(name, true)
             end
         end
-    end},
+    end)},
 
-    FindFirstAncestor = { {"string"}, function(self, name)
+    FindFirstAncestor = { {"string"}, LPH_NO_VIRTUALIZE(function(self, name)
         local RefPointer = self.Parent
         while RefPointer do
             if RefPointer.Name == name then
@@ -199,12 +201,12 @@ local InstanceMethods = {
 
             RefPointer = RefPointer.Parent
         end
-    end},
+    end)},
 
     -- Just to implement for traversal usage
-    WaitForChild = { {"string", "number?"}, function(self, name)
+    WaitForChild = { {"string", "number?"}, LPH_NO_VIRTUALIZE(function(self, name)
         return self:FindFirstChild(name)
-    end},
+    end)},
 }
 
 -- "Proxies" to instance methods, with err checks etc
@@ -219,7 +221,7 @@ for MethodName, MethodObject in next, InstanceMethods do
         EvaluatedTypeInfo[ArgIndex] = {ExpectedType, IsOptional}
     end
 
-    InstanceMethodProxies[MethodName] = function(self, ...)
+    InstanceMethodProxies[MethodName] = LPH_NO_VIRTUALIZE(function(self, ...)
         if not RefChildren[self] then
             error("Expected ':' not '.' calling member function " .. MethodName, 2)
         end
@@ -240,10 +242,10 @@ for MethodName, MethodObject in next, InstanceMethods do
         end
 
         return Method(self, ...)
-    end
+    end)
 end
 
-local function CreateRef(className, name, parent)
+local CreateRef = LPH_NO_VIRTUALIZE(function(className, name, parent)
     -- `name` and `parent` can also be set later by the init script if they're absent
 
     -- Extras
@@ -339,10 +341,10 @@ local function CreateRef(className, name, parent)
     end
 
     return Ref
-end
+end)
 
 -- Create real ref DOM from object tree
-local function CreateRefFromObject(object, parent)
+local CreateRefFromObject; CreateRefFromObject = LPH_NO_VIRTUALIZE(function(object, parent)
     local RefId = object[1]
     local ClassNameId = object[2]
     local Properties = object[3] -- Optional
@@ -368,7 +370,7 @@ local function CreateRefFromObject(object, parent)
     end
 
     return Ref
-end
+end)
 
 local RealObjectRoot = CreateRef("Folder", "[" .. EnvName .. "]")
 for _, Object in next, ObjectTree do
@@ -388,7 +390,7 @@ for RefId, Closure in next, ClosureBindings do
     end
 end
 
-local function LoadScript(scriptRef)
+local LoadScript; LoadScript = LPH_NO_VIRTUALIZE(function(scriptRef)
     local ScriptClassName = scriptRef.ClassName
 
     -- First we'll check for a cached module value (packed into a tbl)
@@ -447,11 +449,11 @@ local function LoadScript(scriptRef)
         StoredModuleValues[scriptRef] = PCallReturn
         return unpack(PCallReturn)
     end
-end
+end)
 
 -- We'll assign the actual func from the top of this output for flattening user globals at runtime
 -- Returns (in a tuple order): wax, script, require
-function ImportGlobals(refId)
+ImportGlobals = LPH_NO_VIRTUALIZE(function(refId)
     local ScriptRef = RefBindings[refId]
 
     local function RealCall(f, ...)
@@ -472,7 +474,18 @@ function ImportGlobals(refId)
 
         shared = genv,
         GetShared = function() return SharedEnvironment end,
-        UpdateShared = function(newShared) SharedEnvironment = newShared end,
+        UpdateShared = function(newShared)
+            if type(newShared) ~= "table" then
+                error("UpdateShared: Argument must be a table", 2)
+            end
+
+            -- Clear old shared environment first
+            for index in next, SharedEnvironment do
+                SharedEnvironment[index] = nil
+            end
+
+            SharedEnvironment = newShared
+        end,
 
         -- "Real" globals instead of the env set ones
         script = script,
@@ -555,7 +568,7 @@ function ImportGlobals(refId)
 
     -- Now, return flattened globals ready for direct runtime exec
     return Global_wax, Global_script, Global_require
-end
+end)
 
 for _, ScriptRef in next, ScriptsToRun do
     Defer(LoadScript, ScriptRef)

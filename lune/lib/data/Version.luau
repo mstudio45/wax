@@ -1,1 +1,1 @@
-return "mspaint-0.4.3"
+return "mspaint-0.4.4"
